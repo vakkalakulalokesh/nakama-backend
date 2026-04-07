@@ -67,6 +67,8 @@ nakama-backend/
 ├── server/
 │   ├── package.json
 │   ├── tsconfig.json
+│   ├── types/
+│   │   └── nakama-runtime/     # Nakama runtime type definitions (bundled)
 │   ├── src/
 │   │   └── main.ts             # Server-side game logic (match handler, RPCs, leaderboard)
 │   └── build/
@@ -106,18 +108,11 @@ cd nakama-backend
 
 ### 2. Build the Server Module
 
+The Nakama runtime type definitions are bundled in `server/types/nakama-runtime/` so no extra downloads are needed.
+
 ```bash
 cd server
 npm install
-
-# Download Nakama runtime type definitions (if not already present)
-mkdir -p node_modules/nakama-runtime
-curl -sL https://raw.githubusercontent.com/heroiclabs/nakama-common/master/index.d.ts \
-  -o node_modules/nakama-runtime/index.d.ts
-echo '{"name":"nakama-runtime","version":"1.45.0","typings":"./index.d.ts"}' \
-  > node_modules/nakama-runtime/package.json
-
-# Compile TypeScript to JavaScript
 npx tsc
 cd ..
 ```

@@ -325,7 +325,7 @@ var matchLoop: nkruntime.MatchLoopFunction = function (ctx, logger, nk, dispatch
 
         var moveData: { position: number };
         try {
-            moveData = JSON.parse(message.data as unknown as string);
+            moveData = JSON.parse(nk.binaryToString(message.data));
         } catch (e) {
             dispatcher.broadcastMessage(OpCode.REJECTED, JSON.stringify({
                 reason: "Invalid move data",
@@ -568,7 +568,7 @@ var rpcGetLeaderboard: nkruntime.RpcFunction = function (ctx, logger, nk, payloa
                 records.push({
                     rank: record.rank,
                     userId: record.ownerId,
-                    username: record.username ? (typeof record.username === "object" ? (record.username as any).value : record.username) : "Unknown",
+                    username: record.username || "Unknown",
                     score: record.score,
                     stats: stats,
                 });
@@ -623,8 +623,7 @@ var matchmakerMatched: nkruntime.MatchmakerMatchedFunction = function (ctx, logg
     var mode = "0";
 
     if (matches && matches.length > 0) {
-        var entry = matches[0] as any;
-        var props = entry.stringProperties || entry.properties || {};
+        var props = matches[0].properties || {};
         if (props["mode"] === "timed") {
             mode = "1";
         }

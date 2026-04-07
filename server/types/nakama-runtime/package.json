@@ -1,0 +1,7 @@
+{
+  "name": "nakama-runtime",
+  "version": "1.45.0",
+  "description": "Type definitions for the Nakama game server runtime.",
+  "typings": "./index.d.ts",
+  "license": "Apache-2.0"
+}

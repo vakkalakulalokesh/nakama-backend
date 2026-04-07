@@ -255,7 +255,7 @@ var matchLoop = function (ctx, logger, nk, dispatcher, tick, state, messages) {
         }
         var moveData;
         try {
-            moveData = JSON.parse(message.data);
+            moveData = JSON.parse(nk.binaryToString(message.data));
         }
         catch (e) {
             dispatcher.broadcastMessage(OpCode.REJECTED, JSON.stringify({
@@ -480,7 +480,7 @@ var rpcGetLeaderboard = function (ctx, logger, nk, payload) {
                 records.push({
                     rank: record.rank,
                     userId: record.ownerId,
-                    username: record.username ? (typeof record.username === "object" ? record.username.value : record.username) : "Unknown",
+                    username: record.username || "Unknown",
                     score: record.score,
                     stats: stats,
                 });
@@ -531,8 +531,7 @@ var rpcGetPlayerStats = function (ctx, logger, nk, payload) {
 var matchmakerMatched = function (ctx, logger, nk, matches) {
     var mode = "0";
     if (matches && matches.length > 0) {
-        var entry = matches[0];
-        var props = entry.stringProperties || entry.properties || {};
+        var props = matches[0].properties || {};
         if (props["mode"] === "timed") {
             mode = "1";
         }
