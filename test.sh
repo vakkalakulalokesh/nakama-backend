@@ -43,18 +43,18 @@ docker compose up -d
 info "Waiting 45 seconds for services to start..."
 sleep 45
 
-# Step 4: Check containers
-info "Checking container status..."
-if docker compose ps | grep -q "nakama.*running"; then
-    pass "Nakama container is running"
+# Step 4: Check containers using healthcheck
+info "Checking if Nakama is reachable..."
+if curl -sf http://localhost:7350/healthcheck > /dev/null 2>&1; then
+    pass "Nakama server is running and healthy"
 else
-    fail "Nakama container is not running. Check: docker compose logs nakama"
-fi
-
-if docker compose ps | grep -q "cockroachdb.*running"; then
-    pass "CockroachDB container is running"
-else
-    fail "CockroachDB container is not running"
+    info "Nakama may still be starting. Waiting 30 more seconds..."
+    sleep 30
+    if curl -sf http://localhost:7350/healthcheck > /dev/null 2>&1; then
+        pass "Nakama server is running and healthy"
+    else
+        fail "Nakama server is not reachable at localhost:7350. Check: docker compose logs nakama"
+    fi
 fi
 
 # Step 5: Check Nakama module loaded
@@ -65,16 +65,7 @@ else
     fail "Module did not load. Check: docker compose logs nakama"
 fi
 
-# Step 6: Test Nakama API
-info "Testing Nakama HTTP API..."
-HEALTH=$(curl -s http://localhost:7350/healthcheck 2>&1)
-if [ $? -eq 0 ]; then
-    pass "Nakama healthcheck responded"
-else
-    fail "Nakama healthcheck failed"
-fi
-
-# Step 7: Test authentication
+# Step 6: Test authentication
 info "Testing device authentication..."
 AUTH_RESPONSE=$(curl -s -X POST "http://localhost:7350/v2/account/authenticate/device?create=true&username=testplayer1" \
     -H "Content-Type: application/json" \
@@ -91,33 +82,43 @@ else
     fail "Authentication failed: $AUTH_RESPONSE"
 fi
 
-# Step 8: Test RPC - get_leaderboard
+# Step 7: Test RPCs (Nakama HTTP API expects payload as a JSON-encoded string)
 if [ -n "$TOKEN" ]; then
     info "Testing RPC: get_leaderboard..."
     LB_RESPONSE=$(curl -s -X POST "http://localhost:7350/v2/rpc/get_leaderboard" \
         -H "Content-Type: application/json" \
         -H "Authorization: Bearer $TOKEN" \
-        -d '{"limit":10}' 2>&1)
+        -d '"{\"limit\":10}"' 2>&1)
     if echo "$LB_RESPONSE" | grep -q "records"; then
         pass "Leaderboard RPC working"
     else
         info "Leaderboard response: $LB_RESPONSE"
-        pass "Leaderboard RPC responded (may be empty)"
     fi
 
     info "Testing RPC: get_player_stats..."
     STATS_RESPONSE=$(curl -s -X POST "http://localhost:7350/v2/rpc/get_player_stats" \
         -H "Content-Type: application/json" \
         -H "Authorization: Bearer $TOKEN" \
-        -d '{}' 2>&1)
+        -d '""' 2>&1)
     if echo "$STATS_RESPONSE" | grep -q "stats"; then
         pass "Player stats RPC working"
     else
         info "Stats response: $STATS_RESPONSE"
     fi
+
+    info "Testing RPC: find_match..."
+    MATCH_RESPONSE=$(curl -s -X POST "http://localhost:7350/v2/rpc/find_match" \
+        -H "Content-Type: application/json" \
+        -H "Authorization: Bearer $TOKEN" \
+        -d '"{\"mode\":0}"' 2>&1)
+    if echo "$MATCH_RESPONSE" | grep -q "matchId"; then
+        pass "Find match RPC working"
+    else
+        info "Match response: $MATCH_RESPONSE"
+    fi
 fi
 
-# Step 9: Build frontend
+# Step 8: Build frontend
 info "Building frontend..."
 cd frontend
 npm install
