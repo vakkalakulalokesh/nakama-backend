@@ -1,0 +1,12 @@
+{
+  "name": "tic-tac-toe-nakama-server",
+  "version": "1.0.0",
+  "description": "Nakama server-side game logic for multiplayer Tic-Tac-Toe",
+  "main": "build/index.js",
+  "scripts": {
+    "build": "npx tsc"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.0"
+  }
+}
